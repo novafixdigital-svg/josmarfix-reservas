@@ -104,7 +104,7 @@
     <div class="step" id="step-hora">
       <div class="step-number">PASO 3</div>
       <h2>🕐 Elige una hora</h2>
-      <div class="time-grid">
+      <div class="time-grid" id="lista-horas">
         <div class="time-slot" onclick="selHora(this,'09:00')">09:00</div>
         <div class="time-slot" onclick="selHora(this,'09:30')">09:30</div>
         <div class="time-slot" onclick="selHora(this,'10:00')">10:00</div>
@@ -153,6 +153,12 @@
       <div class="message" id="mensaje"></div>
     </div>
 
+    <div style="text-align:center;padding:20px;background:linear-gradient(145deg,#111640,#0d1137);border:1px solid #1a2560;border-radius:16px;margin-bottom:20px;">
+      <p style="color:#00e5ff;font-size:0.9em;margin-bottom:10px;font-weight:700;">📱 Escanea y reserva desde tu móvil</p>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=00ff88&bgcolor=0a0e27&data=https://novafixdigital-svg.github.io/josmarfix-reservas/" alt="QR JOSMARFIX" style="border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px rgba(0,255,136,0.3);">
+      <p style="color:#00ff88;font-size:0.75em;margin-top:10px;">novafixdigital-svg.github.io/josmarfix-reservas</p>
+    </div>
+
     <a href="https://wa.me/34631039247?text=Hola%20JOSMARFIX" class="whatsapp-btn" target="_blank">💬 ¿Dudas? Escríbenos por WhatsApp</a>
   </div>
 
@@ -171,6 +177,7 @@
     var mesActual = new Date().getMonth();
     var anioActual = new Date().getFullYear();
     var meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    var reservasOcupadas = [];
 
     function generarCalendario() {
       var cal = document.getElementById("calendario");
@@ -231,6 +238,7 @@
       for (var i = 0; i < h.length; i++) h[i].classList.remove("selected");
       document.getElementById("step-servicio").classList.add("active");
       actualizarResumen();
+      cargarOcupados();
     }
 
     function selServicio(el, n) {
@@ -240,6 +248,7 @@
       servicioSel = n;
       document.getElementById("step-hora").classList.add("active");
       actualizarResumen();
+      marcarOcupados();
     }
 
     function selHora(el, h) {
@@ -251,6 +260,45 @@
       document.getElementById("step-datos").classList.add("active");
       document.getElementById("step-resumen").classList.add("active");
       actualizarResumen();
+    }
+
+    function cargarOcupados() {
+      if (URL_SCRIPT.indexOf("PEGA_AQUI") !== -1) return;
+      var img = new Image();
+      img.onload = function() {
+        var url = URL_SCRIPT + "?consultar=1&t=" + new Date().getTime();
+        fetch(url)
+          .then(function(r) { return r.text(); })
+          .then(function(texto) {
+            reservasOcupadas = [];
+            if (texto && texto !== "SIN DATOS") {
+              var partes = texto.split(",");
+              for (var i = 0; i < partes.length; i++) {
+                reservasOcupadas.push(partes[i]);
+              }
+            }
+            marcarOcupados();
+          })
+          .catch(function() {});
+      };
+      img.src = URL_SCRIPT + "?consultar=1&t=" + new Date().getTime();
+    }
+
+    function marcarOcupados() {
+      var slots = document.querySelectorAll(".time-slot");
+      for (var i = 0; i < slots.length; i++) {
+        slots[i].classList.remove("occupied");
+        var hora = slots[i].textContent.trim();
+        var clave = fechaSel + "|" + hora + "|" + servicioSel;
+        for (var j = 0; j < reservasOcupadas.length; j++) {
+          if (reservasOcupadas[j] === clave) {
+            slots[i].classList.add("occupied");
+            slots[i].classList.remove("selected");
+            if (horaSel === hora) horaSel = "";
+            break;
+          }
+        }
+      }
     }
 
     function actualizarResumen() {
@@ -288,12 +336,12 @@
       var telGuardado = telefono;
 
       var img = new Image();
-      img.onload = function() { exitoReserva(telGuardado); };
-      img.onerror = function() { exitoReserva(telGuardado); };
+      img.onload = function() { procesarRespuesta(telGuardado); };
+      img.onerror = function() { procesarRespuesta(telGuardado); };
       img.src = url;
     }
 
-    function exitoReserva(telefono) {
+    function procesarRespuesta(telefono) {
       msg("¡Reserva enviada! Te contactaremos al " + telefono, "success");
       document.getElementById("input-nombre").value = "";
       document.getElementById("input-telefono").value = "";
