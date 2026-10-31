@@ -6,282 +6,326 @@
 <title>JOSMARFIX RESERVAS</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#0a0e27;color:#e0e0e0;min-height:100vh}
-.header{background:linear-gradient(135deg,#0a0e27,#1a1f4e);border-bottom:2px solid #00ff88;padding:20px;text-align:center}
-.robot-container{width:100px;height:100px;margin:0 auto 10px;border-radius:50%;border:3px solid #00e5ff;box-shadow:0 0 20px rgba(0,229,255,.4),0 0 40px rgba(0,255,136,.2);overflow:hidden;background:#0d1137}
-.robot-container img{width:100%;height:100%;object-fit:cover}
-.header h1{font-size:1.8em;color:#00ff88;text-shadow:0 0 10px rgba(0,255,136,.5);letter-spacing:3px}
-.header p{color:#00e5ff;font-size:.9em;margin-top:5px;letter-spacing:2px}
-.main-container{max-width:500px;margin:0 auto;padding:20px 15px}
-.step{background:linear-gradient(145deg,#111640,#0d1137);border:1px solid #1a2560;border-radius:16px;padding:20px;margin-bottom:20px;position:relative;transition:border-color .3s}
-.step.active{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,.15)}
-.step-number{position:absolute;top:-12px;left:20px;background:#00ff88;color:#0a0e27;font-weight:900;font-size:.8em;padding:3px 12px;border-radius:20px}
-.step h2{color:#00e5ff;font-size:1.1em;margin-bottom:15px;margin-top:5px}
-.calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-.calendar-nav button{background:#1a2560;color:#00e5ff;border:1px solid #00e5ff;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:1em;transition:all .3s}
-.calendar-nav button:hover{background:#00e5ff;color:#0a0e27}
-.calendar-nav span{color:#00ff88;font-weight:700}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.day-name{text-align:center;color:#00e5ff;font-size:.7em;font-weight:700;padding:5px 0}
-.day{text-align:center;padding:8px 2px;border-radius:8px;cursor:pointer;font-size:.85em;transition:all .2s;background:#111640;border:1px solid transparent}
-.day:hover:not(.disabled):not(.empty){background:#1a2560;border-color:#00ff88}
-.day.selected{background:#00ff88;color:#0a0e27;font-weight:900}
-.day.today{border-color:#00e5ff;color:#00e5ff;font-weight:700}
-.day.disabled{color:#333;cursor:not-allowed;background:transparent}
-.day.empty{background:transparent;cursor:default}
-.service-list{display:flex;flex-direction:column;gap:8px}
-.service-item{background:#111640;border:1px solid #1a2560;border-radius:10px;padding:12px 15px;cursor:pointer;transition:all .3s;display:flex;justify-content:space-between;align-items:center}
-.service-item:hover{border-color:#00ff88;background:#151a50}
-.service-item.selected{border-color:#00ff88;background:linear-gradient(135deg,#0d2818,#111640)}
-.service-item .sn{color:#e0e0e0;font-size:.9em}
-.service-item.selected .sn{color:#00ff88;font-weight:700}
-.service-item .sp{color:#00e5ff;font-size:.8em;font-weight:700}
-.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.time-slot{background:#111640;border:1px solid #1a2560;border-radius:8px;padding:10px 5px;text-align:center;cursor:pointer;font-size:.85em;transition:all .3s}
-.time-slot:hover:not(.occupied){border-color:#00ff88;background:#151a50}
-.time-slot.selected{background:#00ff88;color:#0a0e27;font-weight:900}
-.time-slot.occupied{background:#1a0a0a;border-color:#ff3355;color:#ff3355;cursor:not-allowed;text-decoration:line-through}
-.form-group{margin-bottom:15px}
-.form-group label{display:block;color:#00e5ff;font-size:.85em;margin-bottom:6px;font-weight:600}
-.form-group input{width:100%;padding:12px 15px;background:#111640;border:1px solid #1a2560;border-radius:10px;color:#e0e0e0;font-size:1em;transition:border-color .3s}
-.form-group input:focus{outline:none;border-color:#00ff88;box-shadow:0 0 10px rgba(0,255,136,.15)}
-.form-group input::placeholder{color:#444}
-.summary-box{background:#0d1137;border:1px solid #00ff88;border-radius:12px;padding:15px}
-.summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a2560;font-size:.9em}
-.summary-row:last-child{border-bottom:none}
-.sl{color:#00e5ff}
-.sv{color:#00ff88;font-weight:700;text-align:right}
-.btn-submit{width:100%;padding:16px;background:linear-gradient(135deg,#00ff88,#00cc6a);color:#0a0e27;border:none;border-radius:12px;font-size:1.1em;font-weight:900;cursor:pointer;letter-spacing:2px;margin-top:10px;transition:all .3s;text-transform:uppercase}
-.btn-submit:hover{box-shadow:0 0 25px rgba(0,255,136,.5);transform:translateY(-2px)}
-.btn-submit:disabled{background:#333;color:#666;cursor:not-allowed;box-shadow:none;transform:none}
-.message{padding:15px;border-radius:10px;text-align:center;font-weight:700;margin-top:15px;display:none}
-.message.success{background:linear-gradient(135deg,#0d2818,#111640);border:1px solid #00ff88;color:#00ff88;display:block}
-.message.error{background:linear-gradient(135deg,#2a0a0a,#111640);border:1px solid #ff3355;color:#ff3355;display:block}
-.message.loading{background:linear-gradient(135deg,#1a1a00,#111640);border:1px solid #ffcc00;color:#ffcc00;display:block}
-.footer{text-align:center;padding:20px;color:#333;font-size:.75em;border-top:1px solid #1a2560;margin-top:20px}
-.footer a{color:#00e5ff;text-decoration:none}
-.whatsapp-btn{display:block;text-align:center;background:#25d366;color:white;padding:12px;border-radius:10px;text-decoration:none;font-weight:700;margin-top:15px;font-size:.95em;transition:all .3s}
-.whatsapp-btn:hover{box-shadow:0 0 20px rgba(37,211,102,.4)}
-@media(max-width:400px){.header h1{font-size:1.4em}.time-grid{grid-template-columns:repeat(2,1fr)}.main-container{padding:15px 10px}}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0a0e27;color:#fff;min-height:100vh}
+.header{text-align:center;padding:30px 20px 10px}
+.header img{width:120px;border-radius:50%;border:3px solid #00ff88;margin-bottom:10px}
+.header h1{font-size:1.8rem;color:#00ff88;text-shadow:0 0 20px rgba(0,255,136,0.3)}
+.header p{color:#00e5ff;margin-top:5px;font-size:0.95rem}
+.container{max-width:500px;margin:20px auto;padding:0 20px 40px}
+.card{background:rgba(255,255,255,0.05);border:1px solid rgba(0,229,255,0.2);border-radius:16px;padding:25px;margin-bottom:20px}
+.card h2{color:#00e5ff;font-size:1.1rem;margin-bottom:15px;text-align:center}
+label{display:block;color:#aaa;font-size:0.85rem;margin-bottom:5px;margin-top:12px}
+select,input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,229,255,0.3);background:#111638;color:#fff;font-size:1rem;outline:none}
+select:focus,input:focus{border-color:#00ff88;box-shadow:0 0 10px rgba(0,255,136,0.2)}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;margin-top:20px;transition:all 0.3s}
+.btn-reservar{background:linear-gradient(135deg,#00ff88,#00e5ff);color:#0a0e27}
+.btn-reservar:hover{transform:scale(1.02);box-shadow:0 0 25px rgba(0,255,136,0.4)}
+.btn-reservar:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.activo{display:flex}
+.modal{background:#111638;border:2px solid #00ff88;border-radius:20px;padding:30px;max-width:400px;width:90%;text-align:center}
+.modal h3{color:#00ff88;font-size:1.3rem;margin-bottom:10px}
+.modal p{color:#ccc;margin:8px 0;font-size:0.95rem}
+.modal .id{color:#00e5ff;font-weight:700;font-size:1.1rem}
+.modal .btn-cerrar{background:#00ff88;color:#0a0e27;padding:10px 30px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:15px}
+.error-msg{background:rgba(255,50,50,0.15);border:1px solid #ff3232;color:#ff6b6b;padding:12px;border-radius:10px;text-align:center;margin-top:15px;display:none;font-size:0.9rem}
+.loading{display:none;text-align:center;padding:20px;color:#00e5ff}
+.loading.activo{display:block}
+.spinner{display:inline-block;width:30px;height:30px;border:3px solid rgba(0,229,255,0.3);border-top-color:#00ff88;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.qr-section{text-align:center;margin-top:20px}
+.qr-section img{border-radius:12px;border:2px solid #00ff88}
+.qr-section p{color:#aaa;font-size:0.8rem;margin-top:8px}
 </style>
 </head>
 <body>
+
 <div class="header">
-<div class="robot-container"><img src="robot_josmarfix.png" alt="Robot JOSMARFIX"></div>
-<h1>JOSMARFIX IA</h1>
-<p>CREA · AUTOMATIZA · HAZ CRECER</p>
+  <img src="robot_josmarfix.png" alt="JOSMARFIX Robot">
+  <h1>JOSMARFIX RESERVAS</h1>
+  <p>Agencia de Inteligencia Artificial</p>
 </div>
-<div class="main-container">
-<div class="step active" id="step-fecha">
-<div class="step-number">PASO 1</div>
-<h2>📅 Elige una fecha</h2>
-<div class="calendar-nav">
-<button onclick="cambiarMes(-1)">◀</button>
-<span id="mes-actual"></span>
-<button onclick="cambiarMes(1)">▶</button>
+
+<div class="container">
+  <div class="card">
+    <h2>📅 Reserva tu cita</h2>
+
+    <label>Servicio</label>
+    <select id="servicio">
+      <option value="">-- Elige un servicio --</option>
+      <option value="Videos promocionales IA">Videos promocionales IA</option>
+      <option value="Chatbot personalizado IA">Chatbot personalizado IA</option>
+      <option value="Automatizacion de procesos">Automatización de procesos</option>
+      <option value="Asistente virtual IA">Asistente virtual IA</option>
+      <option value="Edicion de imagenes IA">Edición de imágenes IA</option>
+      <option value="Consultoria IA">Consultoría IA</option>
+    </select>
+
+    <label>Fecha</label>
+    <input type="date" id="fecha">
+
+    <label>Hora</label>
+    <select id="hora">
+      <option value="">-- Elige una hora --</option>
+      <option value="09:00">09:00</option>
+      <option value="09:30">09:30</option>
+      <option value="10:00">10:00</option>
+      <option value="10:30">10:30</option>
+      <option value="11:00">11:00</option>
+      <option value="11:30">11:30</option>
+      <option value="12:00">12:00</option>
+      <option value="12:30">12:30</option>
+      <option value="13:00">13:00</option>
+      <option value="13:30">13:30</option>
+      <option value="16:00">16:00</option>
+      <option value="16:30">16:30</option>
+      <option value="17:00">17:00</option>
+      <option value="17:30">17:30</option>
+      <option value="18:00">18:00</option>
+      <option value="18:30">18:30</option>
+      <option value="19:00">19:00</option>
+      <option value="19:30">19:30</option>
+    </select>
+
+    <label>Nombre completo</label>
+    <input type="text" id="nombre" placeholder="Ej: José García">
+
+    <label>Teléfono</label>
+    <input type="tel" id="telefono" placeholder="Ej: 631039247">
+
+    <button class="btn btn-reservar" id="btnReservar" onclick="iniciarReserva()">🚀 RESERVAR AHORA</button>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p id="loadingTexto">Verificando disponibilidad...</p>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <div class="card qr-section">
+    <h2>📱 Comparte esta web</h2>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=00ff88&bgcolor=0a0e27&data=https://novafixdigital-svg.github.io/josmarfix-reservas/" alt="QR">
+    <p>Escanea para abrir en el móvil</p>
+  </div>
 </div>
-<div class="calendar-grid" id="calendario"></div>
+
+<!-- MODAL DE ÉXITO -->
+<div class="modal-overlay" id="modalExito">
+  <div class="modal">
+    <h3>✅ ¡Reserva Confirmada!</h3>
+    <p>Tu ID de reserva:</p>
+    <p class="id" id="reservaId"></p>
+    <p id="reservaDetalles"></p>
+    <button class="btn-cerrar" onclick="cerrarModal()">ENTENDIDO</button>
+  </div>
 </div>
-<div class="step" id="step-servicio">
-<div class="step-number">PASO 2</div>
-<h2>🛠️ Elige un servicio</h2>
-<div class="service-list">
-<div class="service-item" onclick="selServicio(this,'Carteles publicitarios')"><span class="sn">🎨 Carteles publicitarios</span><span class="sp">Desde 49 €</span></div>
-<div class="service-item" onclick="selServicio(this,'Videos promocionales IA')"><span class="sn">🎬 Vídeos promocionales IA</span><span class="sp">Desde 119 €</span></div>
-<div class="service-item" onclick="selServicio(this,'Contenido redes sociales')"><span class="sn">📱 Contenido redes sociales</span><span class="sp">Desde 49 €</span></div>
-<div class="service-item" onclick="selServicio(this,'Automatizacion de tareas')"><span class="sn">⚙️ Automatización de tareas</span><span class="sp">Desde 119 €</span></div>
-<div class="service-item" onclick="selServicio(this,'Asistentes virtuales Chatbots')"><span class="sn">🤖 Asistentes virtuales / Chatbots</span><span class="sp">Desde 249 €</span></div>
-<div class="service-item" onclick="selServicio(this,'Soluciones digitales')"><span class="sn">💻 Soluciones digitales</span><span class="sp">Desde 249 €</span></div>
-</div>
-</div>
-<div class="step" id="step-hora">
-<div class="step-number">PASO 3</div>
-<h2>🕐 Elige una hora</h2>
-<div class="time-grid" id="lista-horas">
-<div class="time-slot" onclick="selHora(this,'09:00')">09:00</div>
-<div class="time-slot" onclick="selHora(this,'09:30')">09:30</div>
-<div class="time-slot" onclick="selHora(this,'10:00')">10:00</div>
-<div class="time-slot" onclick="selHora(this,'10:30')">10:30</div>
-<div class="time-slot" onclick="selHora(this,'11:00')">11:00</div>
-<div class="time-slot" onclick="selHora(this,'11:30')">11:30</div>
-<div class="time-slot" onclick="selHora(this,'12:00')">12:00</div>
-<div class="time-slot" onclick="selHora(this,'12:30')">12:30</div>
-<div class="time-slot" onclick="selHora(this,'13:00')">13:00</div>
-<div class="time-slot" onclick="selHora(this,'16:00')">16:00</div>
-<div class="time-slot" onclick="selHora(this,'16:30')">16:30</div>
-<div class="time-slot" onclick="selHora(this,'17:00')">17:00</div>
-<div class="time-slot" onclick="selHora(this,'17:30')">17:30</div>
-<div class="time-slot" onclick="selHora(this,'18:00')">18:00</div>
-<div class="time-slot" onclick="selHora(this,'18:30')">18:30</div>
-<div class="time-slot" onclick="selHora(this,'19:00')">19:00</div>
-<div class="time-slot" onclick="selHora(this,'19:30')">19:30</div>
-<div class="time-slot" onclick="selHora(this,'20:00')">20:00</div>
-</div>
-</div>
-<div class="step" id="step-datos">
-<div class="step-number">PASO 4</div>
-<h2>👤 Tus datos</h2>
-<div class="form-group"><label>Nombre completo</label><input type="text" id="input-nombre" placeholder="Ej: Maria Garcia Lopez" maxlength="60"></div>
-<div class="form-group"><label>Teléfono</label><input type="tel" id="input-telefono" placeholder="Ej: 631 039 247" maxlength="15"></div>
-</div>
-<div class="step" id="step-resumen">
-<div class="step-number">PASO 5</div>
-<h2>✅ Resumen de tu reserva</h2>
-<div class="summary-box">
-<div class="summary-row"><span class="sl">📅 Fecha:</span><span class="sv" id="res-fecha">—</span></div>
-<div class="summary-row"><span class="sl">🛠️ Servicio:</span><span class="sv" id="res-servicio">—</span></div>
-<div class="summary-row"><span class="sl">🕐 Hora:</span><span class="sv" id="res-hora">—</span></div>
-<div class="summary-row"><span class="sl">👤 Nombre:</span><span class="sv" id="res-nombre">—</span></div>
-<div class="summary-row"><span class="sl">📞 Teléfono:</span><span class="sv" id="res-telefono">—</span></div>
-</div>
-<button class="btn-submit" id="btn-enviar" onclick="enviarReserva()">CONFIRMAR RESERVA</button>
-<div class="message" id="mensaje"></div>
-</div>
-<div style="text-align:center;padding:20px;background:linear-gradient(145deg,#111640,#0d1137);border:1px solid #1a2560;border-radius:16px;margin-bottom:20px;">
-<p style="color:#00e5ff;font-size:0.9em;margin-bottom:10px;font-weight:700;">📱 Escanea y reserva desde tu móvil</p>
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=00ff88&bgcolor=0a0e27&data=https://novafixdigital-svg.github.io/josmarfix-reservas/" alt="QR" style="border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px rgba(0,255,136,0.3);">
-<p style="color:#00ff88;font-size:0.75em;margin-top:10px;">novafixdigital-svg.github.io/josmarfix-reservas</p>
-</div>
-<a href="https://wa.me/34631039247?text=Hola%20JOSMARFIX" class="whatsapp-btn" target="_blank">💬 ¿Dudas? Escríbenos por WhatsApp</a>
-</div>
-<div class="footer">
-<p>© 2025 JOSMARFIX IA · Albatera (Alicante)</p>
-<p>CREA · AUTOMATIZA · HAZ CRECER</p>
-<p><a href="https://wa.me/34631039247">+34 631 039 247</a></p>
-</div>
+
 <script>
-var URL_SCRIPT="https://script.google.com/macros/s/AKfycbwD4vw5VpQCD4Y2z4MQ74R6uIFwRg7i7YQG88vVuDKzpOMGrEddiemn96TfW9UK7hRwVQ/exec";
-var fechaSel="";var servicioSel="";var horaSel="";
-var mesActual=new Date().getMonth();var anioActual=new Date().getFullYear();
-var meses=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-var reservasOcupadas=[];
+// =============================================
+// URL DEL APPS SCRIPT (NO TOCAR)
+// =============================================
+var URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwD4vw5VpQCD4Y2z4MQ74R6uIFwRg7i7YQG88vVuDKzpOMGrEddiemn96TfW9UK7hRwVQ/exec';
 
-function generarCalendario(){
-var cal=document.getElementById("calendario");
-document.getElementById("mes-actual").textContent=meses[mesActual]+" "+anioActual;
-cal.innerHTML="";
-var dn=["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
-for(var i=0;i<7;i++){var d=document.createElement("div");d.className="day-name";d.textContent=dn[i];cal.appendChild(d);}
-var pd=new Date(anioActual,mesActual,1);var ds=pd.getDay();if(ds===0)ds=7;ds--;
-var dim=new Date(anioActual,mesActual+1,0).getDate();
-var hoy=new Date();hoy.setHours(0,0,0,0);
-for(var i=0;i<ds;i++){var d=document.createElement("div");d.className="day empty";cal.appendChild(d);}
-for(var d=1;d<=dim;d++){
-var el=document.createElement("div");el.className="day";el.textContent=d;
-var f=new Date(anioActual,mesActual,d);f.setHours(0,0,0,0);
-var fs=String(d).padStart(2,"0")+"/"+String(mesActual+1).padStart(2,"0")+"/"+anioActual;
-if(f<hoy||f.getDay()===0){el.classList.add("disabled");}
-else{el.setAttribute("data-f",fs);el.onclick=function(){selFecha(this,this.getAttribute("data-f"));};}
-if(f.getTime()===hoy.getTime())el.classList.add("today");
-if(fs===fechaSel)el.classList.add("selected");
-cal.appendChild(el);
-}}
+// =============================================
+// FUNCIONES AUXILIARES
+// =============================================
+function normalizarHora(h) {
+  var partes = h.split(':');
+  return partes[0].padStart(2, '0') + ':' + partes[1].padStart(2, '0');
+}
 
-function cambiarMes(dir){mesActual+=dir;if(mesActual>11){mesActual=0;anioActual++;}if(mesActual<0){mesActual=11;anioActual--;}generarCalendario();}
+function formatearFecha(iso) {
+  var p = iso.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
 
-function selFecha(el,f){
-var t=document.querySelectorAll(".day");for(var i=0;i<t.length;i++)t[i].classList.remove("selected");
-el.classList.add("selected");fechaSel=f;horaSel="";
-var h=document.querySelectorAll(".time-slot.selected");for(var i=0;i<h.length;i++)h[i].classList.remove("selected");
-document.getElementById("step-servicio").classList.add("active");actualizarResumen();cargarOcupados();}
+function mostrarError(msg) {
+  var el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 6000);
+}
 
-function selServicio(el,n){
-var t=document.querySelectorAll(".service-item");for(var i=0;i<t.length;i++)t[i].classList.remove("selected");
-el.classList.add("selected");servicioSel=n;
-document.getElementById("step-hora").classList.add("active");actualizarResumen();marcarOcupados();}
+function mostrarLoading(texto) {
+  document.getElementById('loadingTexto').textContent = texto;
+  document.getElementById('loading').classList.add('activo');
+  document.getElementById('btnReservar').disabled = true;
+}
 
-function selHora(el,h){
-if(el.classList.contains("occupied"))return;
-var t=document.querySelectorAll(".time-slot");for(var i=0;i<t.length;i++)t[i].classList.remove("selected");
-el.classList.add("selected");horaSel=h;
-document.getElementById("step-datos").classList.add("active");
-document.getElementById("step-resumen").classList.add("active");actualizarResumen();}
+function ocultarLoading() {
+  document.getElementById('loading').classList.remove('activo');
+  document.getElementById('btnReservar').disabled = false;
+}
 
-function cargarOcupados(){
-if(!URL_SCRIPT)return;
-var cb="cb_"+new Date().getTime();
-window[cb]=function(data){reservasOcupadas=data.reservas||[];marcarOcupados();delete window[cb];};
-var s=document.createElement("script");
-s.src=URL_SCRIPT+"?consultar=1&callback="+cb+"&t="+new Date().getTime();
-s.onerror=function(){delete window[cb];};
-document.body.appendChild(s);}
+// =============================================
+// VERIFICAR DUPLICADO VIA JSONP (OBLIGATORIO)
+// =============================================
+function verificarDuplicado(fecha, hora, servicio) {
+  return new Promise(function(resolve, reject) {
+    var callbackName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    var timer = null;
+    var script = null;
 
-function marcarOcupados(){
-var slots=document.querySelectorAll(".time-slot");
-for(var i=0;i<slots.length;i++){
-slots[i].classList.remove("occupied");
-var hora=slots[i].textContent.trim();
-var clave=fechaSel+"|"+hora+"|"+servicioSel;
-for(var j=0;j<reservasOcupadas.length;j++){
-if(reservasOcupadas[j]===clave){slots[i].classList.add("occupied");slots[i].classList.remove("selected");if(horaSel===hora)horaSel="";break;}}}}
+    function limpiar() {
+      if (timer) clearTimeout(timer);
+      delete window[callbackName];
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+    }
 
-function actualizarResumen(){
-document.getElementById("res-fecha").textContent=fechaSel||"—";
-document.getElementById("res-servicio").textContent=servicioSel||"—";
-document.getElementById("res-hora").textContent=horaSel||"—";
-document.getElementById("res-nombre").textContent=document.getElementById("input-nombre").value||"—";
-document.getElementById("res-telefono").textContent=document.getElementById("input-telefono").value||"—";}
+    // Timeout de 8 segundos - si no responde, RECHAZAR
+    timer = setTimeout(function() {
+      limpiar();
+      reject(new Error('El servidor no respondió en 8 segundos'));
+    }, 8000);
 
-document.getElementById("input-nombre").addEventListener("input",actualizarResumen);
-document.getElementById("input-telefono").addEventListener("input",actualizarResumen);
+    // Callback de éxito
+    window[callbackName] = function(data) {
+      limpiar();
+      resolve(data);
+    };
 
-function enviarReserva(){
-var nombre=document.getElementById("input-nombre").value.trim();
-var telefono=document.getElementById("input-telefono").value.trim();
-if(!fechaSel){msg("Selecciona una fecha.","error");return;}
-if(!servicioSel){msg("Selecciona un servicio.","error");return;}
-if(!horaSel){msg("Selecciona una hora.","error");return;}
-if(nombre.length<3){msg("Escribe tu nombre completo.","error");return;}
-if(telefono.length<9){msg("Escribe un telefono valido.","error");return;}
+    // Crear script JSONP
+    script = document.createElement('script');
+    var url = URL_SCRIPT + '?consultar=1&fecha=' + encodeURIComponent(fecha) + '&callback=' + callbackName;
+    script.src = url;
 
-msg("Comprobando disponibilidad...","loading");
-document.getElementById("btn-enviar").disabled=true;
+    script.onerror = function() {
+      limpiar();
+      reject(new Error('Error de conexión con el servidor'));
+    };
 
-var cb="cbCheck_"+new Date().getTime();
-window[cb]=function(data){
-delete window[cb];
-var ocupadas=data.reservas||[];
-var clave=fechaSel+"|"+horaSel+"|"+servicioSel;
-var duplicado=false;
-for(var i=0;i<ocupadas.length;i++){
-if(ocupadas[i]===clave){duplicado=true;break;}}
-if(duplicado){
-msg("Esa hora ya esta reservada. Elige otra.","error");
-reservasOcupadas=ocupadas;
-marcarOcupados();
-document.getElementById("btn-enviar").disabled=false;
-}else{
-hacerEnvio(nombre,telefono);
-}};
-var s=document.createElement("script");
-s.src=URL_SCRIPT+"?consultar=1&callback="+cb+"&t="+new Date().getTime();
-s.onerror=function(){
-delete window[cb];
-hacerEnvio(nombre,telefono);
-};
-document.body.appendChild(s);}
+    document.head.appendChild(script);
+  });
+}
 
-function hacerEnvio(nombre,telefono){
-msg("Enviando...","loading");
-var url=URL_SCRIPT+"?fecha="+encodeURIComponent(fechaSel)+"&servicio="+encodeURIComponent(servicioSel)+"&hora="+encodeURIComponent(horaSel)+"&nombre="+encodeURIComponent(nombre)+"&telefono="+encodeURIComponent(telefono);
-var telG=telefono;
-var img=new Image();
-img.onload=function(){exitoEnvio(telG);};
-img.onerror=function(){exitoEnvio(telG);};
-img.src=url;}
+// =============================================
+// ENVIAR RESERVA VIA IMAGE PIXEL
+// =============================================
+function enviarReserva(fecha, hora, servicio, nombre, telefono) {
+  return new Promise(function(resolve) {
+    var id = 'JF-' + Date.now();
+    var params = '?fecha=' + encodeURIComponent(fecha)
+      + '&hora=' + encodeURIComponent(hora)
+      + '&servicio=' + encodeURIComponent(servicio)
+      + '&nombre=' + encodeURIComponent(nombre)
+      + '&telefono=' + encodeURIComponent(telefono)
+      + '&id=' + encodeURIComponent(id);
 
-function exitoEnvio(telefono){
-msg("¡Reserva enviada! Te contactaremos al "+telefono,"success");
-document.getElementById("input-nombre").value="";
-document.getElementById("input-telefono").value="";
-fechaSel="";servicioSel="";horaSel="";
-var s=document.querySelectorAll(".selected");for(var i=0;i<s.length;i++)s[i].classList.remove("selected");
-actualizarResumen();generarCalendario();
-document.getElementById("btn-enviar").disabled=false;
-setTimeout(function(){cargarOcupados();},2000);}
+    var img = new Image();
+    img.onload = function() { resolve(id); };
+    img.onerror = function() { resolve(id); };
+    img.src = URL_SCRIPT + params;
 
-function msg(t,tipo){var m=document.getElementById("mensaje");m.textContent=t;m.className="message "+tipo;}
-generarCalendario();
+    // Resolver de todos modos tras 5s
+    setTimeout(function() { resolve(id); }, 5000);
+  });
+}
+
+// =============================================
+// FUNCIÓN PRINCIPAL: INICIAR RESERVA
+// =============================================
+async function iniciarReserva() {
+  // Ocultar errores previos
+  document.getElementById('errorMsg').style.display = 'none';
+
+  // Leer datos del formulario
+  var servicio = document.getElementById('servicio').value;
+  var fechaISO = document.getElementById('fecha').value;
+  var hora = document.getElementById('hora').value;
+  var nombre = document.getElementById('nombre').value.trim();
+  var telefono = document.getElementById('telefono').value.trim();
+
+  // Validar campos vacíos
+  if (!servicio || !fechaISO || !hora || !nombre || !telefono) {
+    mostrarError('⚠️ Por favor, completa todos los campos.');
+    return;
+  }
+
+  // Convertir fecha de 2026-11-04 a 04/11/2026
+  var fecha = formatearFecha(fechaISO);
+  var horaNorm = normalizarHora(hora);
+
+  // ---- PASO 1: VERIFICAR DISPONIBILIDAD (OBLIGATORIO) ----
+  mostrarLoading('🔍 Verificando disponibilidad...');
+
+  try {
+    var data = await verificarDuplicado(fecha, horaNorm, servicio);
+
+    // Comprobar si el servidor devolvió ocupados
+    if (data && data.ocupados && Array.isArray(data.ocupados)) {
+      var claveBuscada = fecha + '|' + horaNorm + '|' + servicio;
+
+      // Buscar en la lista de ocupados
+      var encontrado = false;
+      for (var i = 0; i < data.ocupados.length; i++) {
+        var item = data.ocupados[i];
+        // Normalizar el item del servidor también
+        var partesItem = item.split('|');
+        if (partesItem.length >= 3) {
+          var itemFecha = partesItem[0].trim();
+          var itemHora = normalizarHora(partesItem[1].trim());
+          var itemServicio = partesItem[2].trim();
+          var itemClave = itemFecha + '|' + itemHora + '|' + itemServicio;
+          if (itemClave === claveBuscada) {
+            encontrado = true;
+            break;
+          }
+        }
+      }
+
+      if (encontrado) {
+        ocultarLoading();
+        mostrarError('🚫 Esa hora ya está ocupada para ese servicio. Elige otra hora.');
+        return;
+      }
+    }
+
+    // ---- PASO 2: ENVIAR RESERVA ----
+    mostrarLoading('✅ Disponible! Enviando reserva...');
+
+    var idReserva = await enviarReserva(fecha, horaNorm, servicio, nombre, telefono);
+
+    ocultarLoading();
+
+    // Mostrar modal de éxito
+    document.getElementById('reservaId').textContent = idReserva;
+    document.getElementById('reservaDetalles').textContent =
+      '📅 ' + fecha + ' a las ' + horaNorm + '\n🔧 ' + servicio + '\n👤 ' + nombre;
+    document.getElementById('modalExito').classList.add('activo');
+
+    // Limpiar formulario
+    document.getElementById('servicio').value = '';
+    document.getElementById('fecha').value = '';
+    document.getElementById('hora').value = '';
+    document.getElementById('nombre').value = '';
+    document.getElementById('telefono').value = '';
+
+  } catch (error) {
+    // SI FALLA LA VERIFICACIÓN → NO ENVIAR NUNCA
+    ocultarLoading();
+    mostrarError('❌ No se pudo verificar disponibilidad. Intenta de nuevo en unos segundos. (' + error.message + ')');
+  }
+}
+
+// =============================================
+// CERRAR MODAL
+// =============================================
+function cerrarModal() {
+  document.getElementById('modalExito').classList.remove('activo');
+}
+
+// =============================================
+// FECHA MÍNIMA = HOY
+// =============================================
+(function() {
+  var hoy = new Date();
+  var yyyy = hoy.getFullYear();
+  var mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  var dd = String(hoy.getDate()).padStart(2, '0');
+  document.getElementById('fecha').setAttribute('min', yyyy + '-' + mm + '-' + dd);
+})();
 </script>
+
 </body>
 </html>
