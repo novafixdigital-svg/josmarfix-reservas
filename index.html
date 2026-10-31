@@ -233,30 +233,52 @@ if(!servicioSel){msg("Selecciona un servicio.","error");return;}
 if(!horaSel){msg("Selecciona una hora.","error");return;}
 if(nombre.length<3){msg("Escribe tu nombre completo.","error");return;}
 if(telefono.length<9){msg("Escribe un telefono valido.","error");return;}
-msg("Enviando...","loading");
+
+msg("Comprobando disponibilidad...","loading");
 document.getElementById("btn-enviar").disabled=true;
-var url=URL_SCRIPT+"?fecha="+encodeURIComponent(fechaSel)+"&servicio="+encodeURIComponent(servicioSel)+"&hora="+encodeURIComponent(horaSel)+"&nombre="+encodeURIComponent(nombre)+"&telefono="+encodeURIComponent(telefono);
-var telG=telefono;
-var cb="cbE_"+new Date().getTime();
+
+var cb="cbCheck_"+new Date().getTime();
 window[cb]=function(data){
 delete window[cb];
-if(data.resultado==="DUPLICADO"){msg("Esa hora ya esta reservada. Elige otra.","error");cargarOcupados();}
-else{msg("¡Reserva enviada! Te contactaremos al "+telG,"success");
-document.getElementById("input-nombre").value="";document.getElementById("input-telefono").value="";
+var ocupadas=data.reservas||[];
+var clave=fechaSel+"|"+horaSel+"|"+servicioSel;
+var duplicado=false;
+for(var i=0;i<ocupadas.length;i++){
+if(ocupadas[i]===clave){duplicado=true;break;}}
+if(duplicado){
+msg("Esa hora ya esta reservada. Elige otra.","error");
+reservasOcupadas=ocupadas;
+marcarOcupados();
+document.getElementById("btn-enviar").disabled=false;
+}else{
+hacerEnvio(nombre,telefono);
+}};
+var s=document.createElement("script");
+s.src=URL_SCRIPT+"?consultar=1&callback="+cb+"&t="+new Date().getTime();
+s.onerror=function(){
+delete window[cb];
+hacerEnvio(nombre,telefono);
+};
+document.body.appendChild(s);}
+
+function hacerEnvio(nombre,telefono){
+msg("Enviando...","loading");
+var url=URL_SCRIPT+"?fecha="+encodeURIComponent(fechaSel)+"&servicio="+encodeURIComponent(servicioSel)+"&hora="+encodeURIComponent(horaSel)+"&nombre="+encodeURIComponent(nombre)+"&telefono="+encodeURIComponent(telefono);
+var telG=telefono;
+var img=new Image();
+img.onload=function(){exitoEnvio(telG);};
+img.onerror=function(){exitoEnvio(telG);};
+img.src=url;}
+
+function exitoEnvio(telefono){
+msg("¡Reserva enviada! Te contactaremos al "+telefono,"success");
+document.getElementById("input-nombre").value="";
+document.getElementById("input-telefono").value="";
 fechaSel="";servicioSel="";horaSel="";
 var s=document.querySelectorAll(".selected");for(var i=0;i<s.length;i++)s[i].classList.remove("selected");
-actualizarResumen();generarCalendario();}
-document.getElementById("btn-enviar").disabled=false;};
-var s=document.createElement("script");
-s.src=url+"&callback="+cb+"&t="+new Date().getTime();
-s.onerror=function(){delete window[cb];
-msg("¡Reserva enviada! Te contactaremos al "+telG,"success");
-document.getElementById("input-nombre").value="";document.getElementById("input-telefono").value="";
-fechaSel="";servicioSel="";horaSel="";
-var sel=document.querySelectorAll(".selected");for(var i=0;i<sel.length;i++)sel[i].classList.remove("selected");
 actualizarResumen();generarCalendario();
-document.getElementById("btn-enviar").disabled=false;};
-document.body.appendChild(s);}
+document.getElementById("btn-enviar").disabled=false;
+setTimeout(function(){cargarOcupados();},2000);}
 
 function msg(t,tipo){var m=document.getElementById("mensaje");m.textContent=t;m.className="message "+tipo;}
 generarCalendario();
