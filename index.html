@@ -155,7 +155,7 @@
 
     <div style="text-align:center;padding:20px;background:linear-gradient(145deg,#111640,#0d1137);border:1px solid #1a2560;border-radius:16px;margin-bottom:20px;">
       <p style="color:#00e5ff;font-size:0.9em;margin-bottom:10px;font-weight:700;">📱 Escanea y reserva desde tu móvil</p>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=00ff88&bgcolor=0a0e27&data=https://novafixdigital-svg.github.io/josmarfix-reservas/" alt="QR JOSMARFIX" style="border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px rgba(0,255,136,0.3);">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=00ff88&bgcolor=0a0e27&data=https://novafixdigital-svg.github.io/josmarfix-reservas/" alt="QR" style="border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px rgba(0,255,136,0.3);">
       <p style="color:#00ff88;font-size:0.75em;margin-top:10px;">novafixdigital-svg.github.io/josmarfix-reservas</p>
     </div>
 
@@ -264,24 +264,16 @@
 
     function cargarOcupados() {
       if (URL_SCRIPT.indexOf("PEGA_AQUI") !== -1) return;
-      var img = new Image();
-      img.onload = function() {
-        var url = URL_SCRIPT + "?consultar=1&t=" + new Date().getTime();
-        fetch(url)
-          .then(function(r) { return r.text(); })
-          .then(function(texto) {
-            reservasOcupadas = [];
-            if (texto && texto !== "SIN DATOS") {
-              var partes = texto.split(",");
-              for (var i = 0; i < partes.length; i++) {
-                reservasOcupadas.push(partes[i]);
-              }
-            }
-            marcarOcupados();
-          })
-          .catch(function() {});
+      var nombre = "cb_" + new Date().getTime();
+      window[nombre] = function(data) {
+        reservasOcupadas = data.reservas || [];
+        marcarOcupados();
+        delete window[nombre];
       };
-      img.src = URL_SCRIPT + "?consultar=1&t=" + new Date().getTime();
+      var s = document.createElement("script");
+      s.src = URL_SCRIPT + "?consultar=1&callback=" + nombre + "&t=" + new Date().getTime();
+      s.onerror = function() { delete window[nombre]; };
+      document.body.appendChild(s);
     }
 
     function marcarOcupados() {
@@ -334,25 +326,45 @@
         "&telefono=" + encodeURIComponent(telefono);
 
       var telGuardado = telefono;
+      var nombreCb = "cbEnvio_" + new Date().getTime();
 
-      var img = new Image();
-      img.onload = function() { procesarRespuesta(telGuardado); };
-      img.onerror = function() { procesarRespuesta(telGuardado); };
-      img.src = url;
-    }
+      window[nombreCb] = function(data) {
+        delete window[nombreCb];
+        if (data.resultado === "DUPLICADO") {
+          msg("Esa hora ya esta reservada. Elige otra.","error");
+          cargarOcupados();
+        } else {
+          msg("¡Reserva enviada! Te contactaremos al " + telGuardado, "success");
+          document.getElementById("input-nombre").value = "";
+          document.getElementById("input-telefono").value = "";
+          fechaSel = "";
+          servicioSel = "";
+          horaSel = "";
+          var s = document.querySelectorAll(".selected");
+          for (var i = 0; i < s.length; i++) s[i].classList.remove("selected");
+          actualizarResumen();
+          generarCalendario();
+        }
+        document.getElementById("btn-enviar").disabled = false;
+      };
 
-    function procesarRespuesta(telefono) {
-      msg("¡Reserva enviada! Te contactaremos al " + telefono, "success");
-      document.getElementById("input-nombre").value = "";
-      document.getElementById("input-telefono").value = "";
-      fechaSel = "";
-      servicioSel = "";
-      horaSel = "";
-      var s = document.querySelectorAll(".selected");
-      for (var i = 0; i < s.length; i++) s[i].classList.remove("selected");
-      actualizarResumen();
-      generarCalendario();
-      document.getElementById("btn-enviar").disabled = false;
+      var s = document.createElement("script");
+      s.src = url + "&callback=" + nombreCb + "&t=" + new Date().getTime();
+      s.onerror = function() {
+        delete window[nombreCb];
+        msg("¡Reserva enviada! Te contactaremos al " + telGuardado, "success");
+        document.getElementById("input-nombre").value = "";
+        document.getElementById("input-telefono").value = "";
+        fechaSel = "";
+        servicioSel = "";
+        horaSel = "";
+        var sel = document.querySelectorAll(".selected");
+        for (var i = 0; i < sel.length; i++) sel[i].classList.remove("selected");
+        actualizarResumen();
+        generarCalendario();
+        document.getElementById("btn-enviar").disabled = false;
+      };
+      document.body.appendChild(s);
     }
 
     function msg(t, tipo) {
