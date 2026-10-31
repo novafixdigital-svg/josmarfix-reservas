@@ -93,11 +93,11 @@ select:focus,input:focus{border-color:#00ff88;box-shadow:0 0 10px rgba(0,255,136
     <label>Teléfono</label>
     <input type="tel" id="telefono" placeholder="Ej: 631039247">
 
-    <button class="btn btn-reservar" id="btnReservar" onclick="iniciarReserva()">🚀 RESERVAR AHORA</button>
+    <button class="btn btn-reservar" id="btnReservar" onclick="hacerReserva()">🚀 RESERVAR AHORA</button>
 
     <div class="loading" id="loading">
       <div class="spinner"></div>
-      <p id="loadingTexto">Verificando disponibilidad...</p>
+      <p>Procesando tu reserva...</p>
     </div>
 
     <div class="error-msg" id="errorMsg"></div>
@@ -110,7 +110,6 @@ select:focus,input:focus{border-color:#00ff88;box-shadow:0 0 10px rgba(0,255,136
   </div>
 </div>
 
-<!-- MODAL DE ÉXITO -->
 <div class="modal-overlay" id="modalExito">
   <div class="modal">
     <h3>✅ ¡Reserva Confirmada!</h3>
@@ -122,18 +121,7 @@ select:focus,input:focus{border-color:#00ff88;box-shadow:0 0 10px rgba(0,255,136
 </div>
 
 <script>
-// =============================================
-// URL DEL APPS SCRIPT (NO TOCAR)
-// =============================================
 var URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwD4vw5VpQCD4Y2z4MQ74R6uIFwRg7i7YQG88vVuDKzpOMGrEddiemn96TfW9UK7hRwVQ/exec';
-
-// =============================================
-// FUNCIONES AUXILIARES
-// =============================================
-function normalizarHora(h) {
-  var partes = h.split(':');
-  return partes[0].padStart(2, '0') + ':' + partes[1].padStart(2, '0');
-}
 
 function formatearFecha(iso) {
   var p = iso.split('-');
@@ -144,11 +132,10 @@ function mostrarError(msg) {
   var el = document.getElementById('errorMsg');
   el.textContent = msg;
   el.style.display = 'block';
-  setTimeout(function() { el.style.display = 'none'; }, 6000);
+  setTimeout(function() { el.style.display = 'none'; }, 8000);
 }
 
-function mostrarLoading(texto) {
-  document.getElementById('loadingTexto').textContent = texto;
+function mostrarLoading() {
   document.getElementById('loading').classList.add('activo');
   document.getElementById('btnReservar').disabled = true;
 }
@@ -158,172 +145,93 @@ function ocultarLoading() {
   document.getElementById('btnReservar').disabled = false;
 }
 
-// =============================================
-// VERIFICAR DUPLICADO VIA JSONP (OBLIGATORIO)
-// =============================================
-function verificarDuplicado(fecha, hora, servicio) {
-  return new Promise(function(resolve, reject) {
-    var callbackName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    var timer = null;
-    var script = null;
-
-    function limpiar() {
-      if (timer) clearTimeout(timer);
-      delete window[callbackName];
-      if (script && script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    // Timeout de 8 segundos - si no responde, RECHAZAR
-    timer = setTimeout(function() {
-      limpiar();
-      reject(new Error('El servidor no respondió en 8 segundos'));
-    }, 8000);
-
-    // Callback de éxito
-    window[callbackName] = function(data) {
-      limpiar();
-      resolve(data);
-    };
-
-    // Crear script JSONP
-    script = document.createElement('script');
-    var url = URL_SCRIPT + '?consultar=1&fecha=' + encodeURIComponent(fecha) + '&callback=' + callbackName;
-    script.src = url;
-
-    script.onerror = function() {
-      limpiar();
-      reject(new Error('Error de conexión con el servidor'));
-    };
-
-    document.head.appendChild(script);
-  });
-}
-
-// =============================================
-// ENVIAR RESERVA VIA IMAGE PIXEL
-// =============================================
-function enviarReserva(fecha, hora, servicio, nombre, telefono) {
-  return new Promise(function(resolve) {
-    var id = 'JF-' + Date.now();
-    var params = '?fecha=' + encodeURIComponent(fecha)
-      + '&hora=' + encodeURIComponent(hora)
-      + '&servicio=' + encodeURIComponent(servicio)
-      + '&nombre=' + encodeURIComponent(nombre)
-      + '&telefono=' + encodeURIComponent(telefono)
-      + '&id=' + encodeURIComponent(id);
-
-    var img = new Image();
-    img.onload = function() { resolve(id); };
-    img.onerror = function() { resolve(id); };
-    img.src = URL_SCRIPT + params;
-
-    // Resolver de todos modos tras 5s
-    setTimeout(function() { resolve(id); }, 5000);
-  });
-}
-
-// =============================================
-// FUNCIÓN PRINCIPAL: INICIAR RESERVA
-// =============================================
-async function iniciarReserva() {
-  // Ocultar errores previos
+function hacerReserva() {
   document.getElementById('errorMsg').style.display = 'none';
 
-  // Leer datos del formulario
   var servicio = document.getElementById('servicio').value;
   var fechaISO = document.getElementById('fecha').value;
   var hora = document.getElementById('hora').value;
   var nombre = document.getElementById('nombre').value.trim();
   var telefono = document.getElementById('telefono').value.trim();
 
-  // Validar campos vacíos
   if (!servicio || !fechaISO || !hora || !nombre || !telefono) {
-    mostrarError('⚠️ Por favor, completa todos los campos.');
+    mostrarError('⚠️ Completa todos los campos.');
     return;
   }
 
-  // Convertir fecha de 2026-11-04 a 04/11/2026
   var fecha = formatearFecha(fechaISO);
-  var horaNorm = normalizarHora(hora);
+  var id = 'JF-' + Date.now();
+  var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
+  var script = document.createElement('script');
+  var timer = null;
 
-  // ---- PASO 1: VERIFICAR DISPONIBILIDAD (OBLIGATORIO) ----
-  mostrarLoading('🔍 Verificando disponibilidad...');
+  function limpiar() {
+    if (timer) clearTimeout(timer);
+    delete window[cbName];
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
 
-  try {
-    var data = await verificarDuplicado(fecha, horaNorm, servicio);
+  mostrarLoading();
 
-    // Comprobar si el servidor devolvió ocupados
-    if (data && data.ocupados && Array.isArray(data.ocupados)) {
-      var claveBuscada = fecha + '|' + horaNorm + '|' + servicio;
+  timer = setTimeout(function() {
+    limpiar();
+    ocultarLoading();
+    mostrarError('❌ El servidor tardó demasiado. Intenta de nuevo.');
+  }, 15000);
 
-      // Buscar en la lista de ocupados
-      var encontrado = false;
-      for (var i = 0; i < data.ocupados.length; i++) {
-        var item = data.ocupados[i];
-        // Normalizar el item del servidor también
-        var partesItem = item.split('|');
-        if (partesItem.length >= 3) {
-          var itemFecha = partesItem[0].trim();
-          var itemHora = normalizarHora(partesItem[1].trim());
-          var itemServicio = partesItem[2].trim();
-          var itemClave = itemFecha + '|' + itemHora + '|' + itemServicio;
-          if (itemClave === claveBuscada) {
-            encontrado = true;
-            break;
-          }
-        }
-      }
+  window[cbName] = function(data) {
+    limpiar();
+    ocultarLoading();
 
-      if (encontrado) {
-        ocultarLoading();
-        mostrarError('🚫 Esa hora ya está ocupada para ese servicio. Elige otra hora.');
-        return;
-      }
+    if (data && data.error) {
+      mostrarError('🚫 ' + data.mensaje);
+      return;
     }
 
-    // ---- PASO 2: ENVIAR RESERVA ----
-    mostrarLoading('✅ Disponible! Enviando reserva...');
+    if (data && data.ok) {
+      document.getElementById('reservaId').textContent = data.id;
+      document.getElementById('reservaDetalles').textContent =
+        '📅 ' + fecha + ' a las ' + hora + ' | 🔧 ' + servicio + ' | 👤 ' + nombre;
+      document.getElementById('modalExito').classList.add('activo');
+      document.getElementById('servicio').value = '';
+      document.getElementById('fecha').value = '';
+      document.getElementById('hora').value = '';
+      document.getElementById('nombre').value = '';
+      document.getElementById('telefono').value = '';
+      return;
+    }
 
-    var idReserva = await enviarReserva(fecha, horaNorm, servicio, nombre, telefono);
+    mostrarError('❌ Respuesta inesperada del servidor.');
+  };
 
+  var url = URL_SCRIPT
+    + '?fecha=' + encodeURIComponent(fecha)
+    + '&hora=' + encodeURIComponent(hora)
+    + '&servicio=' + encodeURIComponent(servicio)
+    + '&nombre=' + encodeURIComponent(nombre)
+    + '&telefono=' + encodeURIComponent(telefono)
+    + '&id=' + encodeURIComponent(id)
+    + '&callback=' + cbName;
+
+  script.src = url;
+  script.onerror = function() {
+    limpiar();
     ocultarLoading();
-
-    // Mostrar modal de éxito
-    document.getElementById('reservaId').textContent = idReserva;
-    document.getElementById('reservaDetalles').textContent =
-      '📅 ' + fecha + ' a las ' + horaNorm + '\n🔧 ' + servicio + '\n👤 ' + nombre;
-    document.getElementById('modalExito').classList.add('activo');
-
-    // Limpiar formulario
-    document.getElementById('servicio').value = '';
-    document.getElementById('fecha').value = '';
-    document.getElementById('hora').value = '';
-    document.getElementById('nombre').value = '';
-    document.getElementById('telefono').value = '';
-
-  } catch (error) {
-    // SI FALLA LA VERIFICACIÓN → NO ENVIAR NUNCA
-    ocultarLoading();
-    mostrarError('❌ No se pudo verificar disponibilidad. Intenta de nuevo en unos segundos. (' + error.message + ')');
-  }
+    mostrarError('❌ Error de conexión. Revisa tu internet.');
+  };
+  document.head.appendChild(script);
 }
 
-// =============================================
-// CERRAR MODAL
-// =============================================
 function cerrarModal() {
   document.getElementById('modalExito').classList.remove('activo');
 }
 
-// =============================================
-// FECHA MÍNIMA = HOY
-// =============================================
 (function() {
   var hoy = new Date();
-  var yyyy = hoy.getFullYear();
-  var mm = String(hoy.getMonth() + 1).padStart(2, '0');
-  var dd = String(hoy.getDate()).padStart(2, '0');
-  document.getElementById('fecha').setAttribute('min', yyyy + '-' + mm + '-' + dd);
+  var y = hoy.getFullYear();
+  var m = String(hoy.getMonth() + 1).padStart(2, '0');
+  var d = String(hoy.getDate()).padStart(2, '0');
+  document.getElementById('fecha').setAttribute('min', y + '-' + m + '-' + d);
 })();
 </script>
 
