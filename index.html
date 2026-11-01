@@ -155,7 +155,7 @@ function hacerReserva() {
   var telefono = document.getElementById('telefono').value.trim();
 
   if (!servicio || !fechaISO || !hora || !nombre || !telefono) {
-    mostrarError('⚠️ Completa todos los campos.');
+    mostrarError('Completa todos los campos.');
     return;
   }
 
@@ -176,7 +176,7 @@ function hacerReserva() {
   timer = setTimeout(function() {
     limpiar();
     ocultarLoading();
-    mostrarError('❌ El servidor tardó demasiado. Intenta de nuevo.');
+    mostrarError('El servidor tardo demasiado. Intenta de nuevo.');
   }, 15000);
 
   window[cbName] = function(data) {
@@ -184,14 +184,13 @@ function hacerReserva() {
     ocultarLoading();
 
     if (data && data.error) {
-      mostrarError('🚫 ' + data.mensaje);
+      mostrarError(data.mensaje);
       return;
     }
 
     if (data && data.ok) {
       document.getElementById('reservaId').textContent = data.id;
-      document.getElementById('reservaDetalles').textContent =
-        '📅 ' + fecha + ' a las ' + hora + ' | 🔧 ' + servicio + ' | 👤 ' + nombre;
+      document.getElementById('reservaDetalles').textContent = fecha + ' a las ' + hora + ' | ' + servicio + ' | ' + nombre;
       document.getElementById('modalExito').classList.add('activo');
       document.getElementById('servicio').value = '';
       document.getElementById('fecha').value = '';
@@ -201,7 +200,7 @@ function hacerReserva() {
       return;
     }
 
-    mostrarError('❌ Respuesta inesperada del servidor.');
+    mostrarError('Respuesta inesperada del servidor.');
   };
 
   var url = URL_SCRIPT
@@ -217,7 +216,7 @@ function hacerReserva() {
   script.onerror = function() {
     limpiar();
     ocultarLoading();
-    mostrarError('❌ Error de conexión. Revisa tu internet.');
+    mostrarError('Error de conexion. Revisa tu internet.');
   };
   document.head.appendChild(script);
 }
@@ -237,4 +236,3 @@ function cerrarModal() {
 
 </body>
 </html>
- 
