@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOSMARFIX Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0a0e27;color:#fff;min-height:100vh}
+.login-box{max-width:350px;margin:100px auto;text-align:center;background:rgba(255,255,255,0.05);border:1px solid rgba(0,229,255,0.2);border-radius:16px;padding:30px}
+.login-box h2{color:#00ff88;margin-bottom:20px}
+.login-box input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,229,255,0.3);background:#111638;color:#fff;font-size:1rem;text-align:center;margin-bottom:15px}
+.login-box button{width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#00ff88,#00e5ff);color:#0a0e27;font-size:1rem;font-weight:700;cursor:pointer}
+.login-error{color:#ff6b6b;margin-top:10px;display:none}
+.panel{display:none;padding:20px;max-width:900px;margin:0 auto}
+.panel h1{color:#00ff88;text-align:center;margin-bottom:5px}
+.panel .sub{color:#00e5ff;text-align:center;margin-bottom:20px;font-size:0.9rem}
+.stats{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+.stat{background:rgba(255,255,255,0.05);border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:15px 20px;text-align:center;min-width:120px}
+.stat .num{font-size:1.8rem;font-weight:700;color:#00ff88}
+.stat .lbl{font-size:0.75rem;color:#aaa;margin-top:3px}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{background:rgba(0,229,255,0.1);color:#00e5ff;padding:10px 8px;text-align:left;position:sticky;top:0}
+td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+tr:hover{background:rgba(0,255,136,0.05)}
+.estado{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;cursor:pointer;border:none}
+.e-pendiente{background:rgba(255,200,0,0.2);color:#ffc800}
+.e-confirmada{background:rgba(0,255,136,0.2);color:#00ff88}
+.e-cancelada{background:rgba(255,50,50,0.2);color:#ff6b6b}
+.btn-refresh{background:rgba(0,229,255,0.2);color:#00e5ff;border:1px solid #00e5ff;padding:8px 20px;border-radius:10px;cursor:pointer;font-size:0.9rem;margin-bottom:15px}
+.btn-logout{background:rgba(255,50,50,0.2);color:#ff6b6b;border:1px solid #ff6b6b;padding:8px 20px;border-radius:10px;cursor:pointer;font-size:0.9rem;margin-bottom:15px;float:right}
+.loading{text-align:center;padding:40px;color:#00e5ff}
+@media(max-width:600px){
+  table{font-size:0.75rem}
+  th,td{padding:6px 4px}
+  .stats{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div class="login-box" id="loginBox">
+  <h2>🔐 JOSMARFIX Admin</h2>
+  <p style="color:#aaa;margin-bottom:15px;font-size:0.9rem">Introduce la contraseña</p>
+  <input type="password" id="passInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')entrar()">
+  <button onclick="entrar()">ENTRAR</button>
+  <p class="login-error" id="loginError">Contraseña incorrecta</p>
+</div>
+
+<!-- PANEL DE ADMINISTRACIÓN -->
+<div class="panel" id="panel">
+  <button class="btn-logout" onclick="salir()">🚪 Salir</button>
+  <button class="btn-refresh" onclick="cargarReservas()">🔄 Actualizar</button>
+  <h1>📋 Panel de Reservas</h1>
+  <p class="sub">JOSMARFIX IA - Gestión de citas</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="sTotal">0</div><div class="lbl">TOTAL</div></div>
+    <div class="stat"><div class="num" id="sPendiente">0</div><div class="lbl">PENDIENTES</div></div>
+    <div class="stat"><div class="num" id="sConfirmada">0</div><div class="lbl">CONFIRMADAS</div></div>
+    <div class="stat"><div class="num" id="sCancelada">0</div><div class="lbl">CANCELADAS</div></div>
+  </div>
+
+  <div id="tablaContainer">
+    <div class="loading">Cargando reservas...</div>
+  </div>
+</div>
+
+<script>
+var URL = 'https://script.google.com/macros/s/AKfycbwD4vw5VpQCD4Y2z4MQ74R6uIFwRg7i7YQG88vVuDKzpOMGrEddiemn96TfW9UK7hRwVQ/exec';
+var passGuardada = '';
+
+function jsonp(params) {
+  return new Promise(function(resolve, reject) {
+    var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
+    var s = document.createElement('script');
+    var t = setTimeout(function() { limpiar(); reject('timeout'); }, 15000);
+    function limpiar() { clearTimeout(t); delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = function(d) { limpiar(); resolve(d); };
+    s.src = URL + params + '&callback=' + cb;
+    s.onerror = function() { limpiar(); reject('error'); };
+    document.head.appendChild(s);
+  });
+}
+
+function entrar() {
+  var pass = document.getElementById('passInput').value;
+  document.getElementById('loginError').style.display = 'none';
+  jsonp('?admin=1&pass=' + encodeURIComponent(pass)).then(function(d) {
+    if (d && d.ok) {
+      passGuardada = pass;
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+      mostrarReservas(d.reservas);
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }).catch(function() {
+    document.getElementById('loginError').textContent = 'Error de conexión';
+    document.getElementById('loginError').style.display = 'block';
+  });
+}
+
+function salir() {
+  passGuardada = '';
+  document.getElementById('panel').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('passInput').value = '';
+}
+
+function cargarReservas() {
+  document.getElementById('tablaContainer').innerHTML = '<div class="loading">Cargando...</div>';
+  jsonp('?admin=1&pass=' + encodeURIComponent(passGuardada)).then(function(d) {
+    if (d && d.ok) mostrarReservas(d.reservas);
+  });
+}
+
+function mostrarReservas(reservas) {
+  var total = reservas.length;
+  var pend = 0, conf = 0, canc = 0;
+  reservas.forEach(function(r) {
+    if (r.estado === 'PENDIENTE') pend++;
+    else if (r.estado === 'CONFIRMADA') conf++;
+    else if (r.estado === 'CANCELADA') canc++;
+  });
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sPendiente').textContent = pend;
+  document.getElementById('sConfirmada').textContent = conf;
+  document.getElementById('sCancelada').textContent = canc;
+
+  if (total === 0) {
+    document.getElementById('tablaContainer').innerHTML = '<p style="text-align:center;color:#aaa;padding:30px">No hay reservas todavía</p>';
+    return;
+  }
+
+  var html = '<table><tr><th>Fecha</th><th>Hora</th><th>Servicio</th><th>Nombre</th><th>Teléfono</th><th>Estado</th></tr>';
+  reservas.sort(function(a, b) {
+    var fa = a.fecha.split('/').reverse().join('') + a.hora;
+    var fb = b.fecha.split('/').reverse().join('') + b.hora;
+    return fa > fb ? 1 : -1;
+  });
+  reservas.forEach(function(r) {
+    var cls = r.estado === 'CONFIRMADA' ? 'e-confirmada' : r.estado === 'CANCELADA' ? 'e-cancelada' : 'e-pendiente';
+    html += '<tr>'
+      + '<td>' + r.fecha + '</td>'
+      + '<td>' + r.hora + '</td>'
+      + '<td>' + r.servicio + '</td>'
+      + '<td>' + r.nombre + '</td>'
+      + '<td>' + r.telefono + '</td>'
+      + '<td><button class="estado ' + cls + '" onclick="cambiarEstado(\'' + r.id + '\',\'' + r.estado + '\')">' + r.estado + '</button></td>'
+      + '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('tablaContainer').innerHTML = html;
+}
+
+function cambiarEstado(id, actual) {
+  var nuevo = actual === 'PENDIENTE' ? 'CONFIRMADA' : actual === 'CONFIRMADA' ? 'CANCELADA' : 'PENDIENTE';
+  jsonp('?cambiar=1&id=' + encodeURIComponent(id) + '&estado=' + nuevo + '&pass=' + encodeURIComponent(passGuardada)).then(function(d) {
+    if (d && d.ok) cargarReservas();
+  });
+}
+</script>
+
+</body>
+</html>
